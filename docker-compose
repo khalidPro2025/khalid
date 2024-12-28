@@ -1,0 +1,55 @@
+version: '3.7'
+
+services:
+  dns_server:
+    image: internetsystemsconsorti>
+    container_name: dns_server
+    networks:
+      smarttech-services:
+        ipv4_address: 172.20.0.10
+    volumes:
+      - ./bind:/etc/bind
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    command: ["-f"]  # Assure que >
+
+  ftp_server:
+    image: stilliard/pure-ftpd
+    container_name: ftp_server
+    networks:
+      smarttech-services:
+        ipv4_address: 172.20.0.11
+    ports:
+      - "2121:21"
+      - "31000-31009:30000-30009"
+    volumes:
+      - ./ftp:/home/ftpusers
+    environment:
+      - FTP_USER_NAME=user
+      - FTP_USER_PASS=password
+ssh_server:
+    image: rastasheep/ubuntu-sshd
+    container_name: ssh_server
+    networks:
+      smarttech-services:
+        ipv4_address: 172.20.0.12
+    ports:
+      - "2222:22"
+
+  mailserver:
+    image: mailhog/mailhog
+    container_name: mailserver
+    networks:
+      smarttech-services:
+        ipv4_address: 172.20.0.13
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+networks:
+  smarttech-services:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "172.20.0.0/24"
