@@ -1,0 +1,60 @@
+dockerfile ssh
+ Utiliser l'image de base Ubuntu
+FROM ubuntu:latest
+
+# Mettre à jour et installer les paquets nécessair>
+RUN apt-get update && apt-get install -y \
+    nano \
+    inetutils-ping \
+    net-tools \
+    sudo \
+    openssh-server && \
+    apt-get clean && \
+    mkdir /var/run/sshd
+
+# Créer l'utilisateur 'barro' avec le mot de passe>
+RUN useradd -m -s /bin/bash khalid && \
+    echo "khalid:passer" | chpasswd && \
+    adduser khalid sudo
+
+# Créer le répertoire .ssh pour l'utilisateur 'bar>
+RUN mkdir -p /home/khalid/.ssh && \
+    chown khalid:khalid /home/khalid/.ssh && \
+    chmod 700 /home/khalid/.ssh
+
+# Copier la clé publique dans le dossier authorize>
+COPY ./config/authorized_keys /home/khalid/.ssh/au>
+RUN chown khalid:khalid /home/khalid/.ssh/authoriz>
+    chmod 600 /home/khalid/.ssh/authorized_keys
+
+# Copier la configuration SSH
+COPY ./config/sshd_config /etc/ssh/sshd_config
+
+# Exposer le port SSH (par défaut 22)
+EXPOSE 22
+# Lancer le serveur SSH
+CMD ["/usr/sbin/sshd", "-D"]
+
+
+# Config et ssh
+sshd_config
+
+# Permettre les connexions par clé publique
+PubkeyAuthentication yes
+
+# Permettre les connexions par mot de passe
+PasswordAuthentication yes
+
+# Spécifier l'emplacement des clés autorisées pour>
+AuthorizedKeysFile /home/khalid/ .ssh/authorized_k>
+
+# Autoriser l'utilisateur 'barro' à se connecter
+AllowUsers khalid
+
+# Autres configurations de sécurité de base
+PermitRootLogin no
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+
+
+
