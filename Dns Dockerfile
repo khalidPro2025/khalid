@@ -1,0 +1,30 @@
+# Utiliser Ubuntu comme base
+FROM ubuntu:22.04
+
+# Installer les dépendances nécessaires pour Bind9>
+RUN apt-get update && apt-get install -y \
+    bind9 \
+    bind9utils \
+    bind9-doc \
+    openssh-client \
+    nano \
+    iputils-ping \
+    net-tools \
+    sudo && \
+    apt-get clean
+
+# Copier les fichiers de configuration locaux dans>
+COPY ./config/named.conf /etc/bind/named.conf
+COPY ./config/named.conf.local /etc/bind/named.con>
+COPY ./config/db.tech-services.local /etc/bind/db.>
+COPY ./config/db.127 /etc/bind/db.127
+
+# Exposer les ports DNS
+EXPOSE 53/udp
+EXPOSE 53/tcp
+
+# Définir un volume pour les fichiers dynamiques
+VOLUME ["/var/cache/bind", "/var/log/bind"]
+
+# Lancer Bind9 en mode foreground
+CMD ["named", "-g", "-u", "bind"]
