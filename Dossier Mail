@@ -1,0 +1,30 @@
+# mail/Dockerfile Mail
+FROM analogic/poste.io:latest
+RUN mkdir -p /data && mkdir -p /ssl
+COPY certs/ /ssl/
+COPY config/ /data/
+CMD ["/init "]
+
+#mail/config/aliases.json
+{
+  "aliases": []
+}
+
+#mail/config/domains.json
+{
+  "domains": [
+    {
+      "name": "estm.com",
+      "default_mailbox": "admin@estm.com"
+    }
+  ]
+}
+
+#mail/config/setting.json
+
+{
+  "hostname": "mail.estm.com",
+  "timezone": "Europe/Paris"
+}
+
+
