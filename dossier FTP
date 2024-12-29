@@ -1,0 +1,40 @@
+# Dockerfile ftp
+
+# Utiliser l'image de base Pure-FTPd
+FROM stilliard/pure-ftpd
+
+# Créer un répertoire pour les utilisateurs FTP
+RUN mkdir -p /home/ftpusers && \
+    chmod 777 /home/ftpusers
+
+# Copier les fichiers de configuration
+COPY config/pure-ftpd.conf /etc/pure-ftpd/pure-ftpd.conf
+COPY config/pureftpd.passwd /etc/pure-ftpd/pureftpd.passwd
+
+# Supprimer l'utilisateur s'il existe et créer ou modifier son mot de passe
+RUN id ftpuser || useradd -m ftpuser -s /sbin/nologin && \
+    echo 'ftpuser:password' | chpasswd
+
+# Générer la base de données PureDB
+RUN pure-pw mkdb /etc/pure-ftpd/pureftpd.pdb -f /etc/pure-ftpd/pureftpd.passwd
+
+# Exposer les ports requis
+EXPOSE 21 30000-30009
+
+# Démarrer le serveur FTP
+CMD ["/usr/sbin/pure-ftpd", "-c50", "-C8", "-l puredb:/etc/pure-ftpd/pureftpd.pdb", "-E", "-j", "-R"]
+
+#ssh/config/pure-ftpd.conf
+
+hrootEveryone yes
+NoAnonymous yes
+VerboseLog yes
+DisplayDotFiles yes
+MaxClientsNumber 50
+PassivePortRange 30000 30009
+AllowUserFXP no
+TLS 2
+
+#ssh/config/pureftpd.passwd
+ftpuser:$1$abc$XYZ1234567890abcdefghi:1000:1000::/home/ftpusers::
+
