@@ -1,0 +1,61 @@
+dossier config
+# fichier db.tech-services.local
+  GNU nano 6.2   db.tech-services.local            
+$TTL 604800
+@   IN  SOA ns.tech-services.local. admin.tech-ser>
+
+            1         ; Serial
+            604800    ; Refresh
+            86400     ; Retry
+            2419200   ; Expire
+            604800 )  ; Negative Cache TTL
+
+; Enregistrements NS
+@           IN  NS  ns.tech-services.local.
+; Enregistrements A
+ns          IN  A   172.20.0.10
+ftp         IN  A   172.20.0.11
+ssh         IN  A   172.20.0.12
+mail        IN  A   172.20.0.13
+@           IN  A   172.20.0.10
+vnc         IN  A   172.20.0.14
+# fichier db.127
+TTL 604800
+
+@   IN  SOA tech-services.local. admin.tech-servic>
+
+            1         ; Serial
+            604800    ; Refresh
+            86400     ; Retry
+            2419200   ; Expire
+            604800 )  ; Negative Cache TTL
+
+; Enregistrements NS
+@                         IN  NS  ns.tech-services>
+; Enregistrements PTR
+10.0.20.172.in-addr.arpa. IN  PTR ns.tech-services>
+11.0.20.172.in-addr.arpa. IN  PTR ftp.tech-service>
+12.0.20.172.in-addr.arpa. IN  PTR ssh.tech-service>
+13.0.20.172.in-addr.arpa. IN  PTR mail.tech-servic>
+14.0.20.172.in-addr.arpa. IN  PTR vnc.tech-service>
+
+#fichier named.conf
+options {
+    directory "/var/cache/bind";
+
+    // écouter sur toutes les interfaces
+    listen-on { any; };
+
+    // configurer DNSSEC
+    dnssec-validation auto;
+};
+
+zone "tech-services.local" {
+    type master;
+    file "/etc/bind/db.tech-services.local";
+};
+
+zone "127.in-addr.arpa" {
+    type master;
+    file "/etc/bind/db.127";
+};
