@@ -1,0 +1,4 @@
+FROM fauria/vsftpd
+RUN apt-get update && apt-get install -y curl
+COPY vsftpd.conf /etc/vsftpd.conf
+CMD ["/usr/sbin/vsftpd", "/etc/vsftpd.conf"]
