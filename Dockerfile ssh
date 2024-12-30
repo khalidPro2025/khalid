@@ -1,4 +1,13 @@
 FROM linuxserver/openssh-server
 RUN apt-get update && apt-get install -y sudo
-COPY sshd_config /etc/ssh/sshd_config
+COPY ./config/sshd_config /etc/ssh/sshd_config
 CMD ["/usr/sbin/sshd", "-D"]
+
+sshd_config
+PermitRootLogin no
+PasswordAuthentication yes
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+UsePAM yes
+X11Forwarding yes
+AllowTcpForwarding yes
