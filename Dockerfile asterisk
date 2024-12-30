@@ -1,0 +1,31 @@
+# Utiliser Ubuntu 20.04 comme image de base
+FROM ubuntu:20.04
+
+# Préparer le système pour éviter les invites interactives
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Mettre à jour le système et installer Asterisk et ses dépendances
+RUN apt-get update && apt-get upgrade -y \
+    && apt-get install -y \
+    asterisk \
+    build-essential \
+    libssl-dev \
+    libncurses5-dev \
+    libxml2-dev \
+    libjansson-dev \
+    libsqlite3-dev \
+    pkg-config \
+    git \
+    sudo \
+    curl \
+# Configurer le fuseau horaire de manière non interactive
+RUN echo "Etc/UTC" > /etc/timezone \
+    && dpkg-reconfigure -f noninteractive tzdata
+
+# Copier le script de démarrage d'Asterisk
+COPY ./toip/start-asterisk.sh /start-asterisk.sh
+RUN chmod +x /start-asterisk.sh
+
+# Démarrer Asterisk via le script
+CMD ["/start-asterisk.sh"]
+
