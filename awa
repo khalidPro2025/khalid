@@ -1,0 +1,24 @@
+project/
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── requirements.txt
+│   ├── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── App.js
+│   ├── Dockerfile
+├── db/
+│   ├── init.sql
+├── proxy/
+│   ├── nginx.conf
+│   ├── Dockerfile
+├── admin/
+│   ├── ssh/
+│   │   ├── Dockerfile
+│   ├── rdp/
+│   │   ├── Dockerfile
+│   ├── vnc/
+│   │   ├── Dockerfile
+├── docker-compose.yml
+└── README.md
