@@ -1,0 +1,41 @@
+db.smarttech
+$TTL 604800
+@   IN  SOA tech-services.local. root.tech-services.local. (
+
+            1         ; Serial
+            604800    ; Refresh
+            86400     ; Retry
+            2419200   ; Expire
+            604800 )  ; Negative Cache TTL
+
+; Enregistrements NS
+@           IN  NS  ns.tech-services.local.
+; Enregistrements A
+ns          IN  A   127.0.0.1
+ftp         IN  A   172.20.0.11
+
+named.conf.local
+
+zone "tech-services.local" {
+    type master;
+    file "/etc/bind/db.tech-services";
+};
+
+named.conf.options
+
+options {
+    directory "/var/cache/bind";
+
+    fowarders {
+       8.8.8.8;
+       8.8.4.4;
+    };
+
+    // écouter sur toutes les interfaces
+    listen-on { any; };
+    listen-on-v6{ any; };
+    // configurer DNSSEC
+    dnssec-validation auto;
+
+};
+
