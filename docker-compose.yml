@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  ftp:
+    image: fauria/vsftpd
+    ports:
+      - "21:21"
+    volumes:
+      - ftp_data:/home/vsftpd
+    networks:
+      - smarttech_network
+
+  ssh:
+    image: linuxserver/openssh-server
+    ports:
+      - "22:22"
+    environment:
+      PASSWORD_ACCESS: 'true'
+      USER_NAME: 'admin'
+      USER_PASSWORD: 'password'
+    networks:
+      - smarttech_network
+
+  toip:
+    image: asterisk:18
+    ports:
+      - "5060:5060/udp"
+      - "5061:5061/tcp"
+    volumes:
+      - asterisk_data:/etc/asterisk
+    networks:
+      - smarttech_network
+
+  dns:
+    image: internetsystemsconsortium/bind9:9.18
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+    volumes:
+      - dns_data:/etc/bind
+    networks:
+      - smarttech_network
+
+  mail:
+    image: tiredofit/iredmail
+    ports:
+      - "25:25"
+      - "587:587"
+      - "993:993"
+    environment:
+      DOMAIN_NAME: 'smarttech.local'
+      HOSTNAME: 'mail'
+    volumes:
+      - mail_data:/var/vmail
+    networks:
+      - smarttech_network
+
+  vnc:
+    image: dorowu/ubuntu-desktop-lxde-vnc
+    ports:
+      - "5901:5901"
+      - "6080:80"
+    networks:
+      - smarttech_network
+
+networks:
+  smarttech_network:
+    driver: bridge
+
+volumes:
+  ftp_data:
+  asterisk_data:
+  dns_data:
+  mail_data:
