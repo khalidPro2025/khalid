@@ -1,0 +1,5 @@
+FROM asterisk:18
+RUN apt-get update && apt-get install -y nano
+COPY pjsip.conf /etc/asterisk/pjsip.conf
+COPY extensions.conf /etc/asterisk/extensions.conf
+CMD ["/usr/sbin/asterisk", "-f"]
