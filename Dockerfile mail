@@ -2,3 +2,9 @@ FROM tiredofit/iredmail
 RUN apt-get update && apt-get install -y spamassassin
 COPY main.cf /etc/postfix/main.cf
 CMD ["/start.sh"]
+
+main.cf
+myhostname = mail.smarttech.local
+mydomain = smarttech.local
+myorigin = /etc/mailname
+inet_interfaces = all
