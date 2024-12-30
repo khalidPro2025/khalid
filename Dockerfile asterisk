@@ -29,3 +29,11 @@ RUN chmod +x /start-asterisk.sh
 # Démarrer Asterisk via le script
 CMD ["/start-asterisk.sh"]
 
+ fichier a editer  start-asterisk.sh 
+
+#!/bin/bash
+# Démarrer Asterisk
+asterisk -f -U asterisk -G asterisk
+
+
+
