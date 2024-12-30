@@ -1,0 +1,4 @@
+FROM internetsystemsconsortium/bind9:9.18
+RUN apt-get update && apt-get install -y dnsutils
+COPY named.conf /etc/bind/named.conf
+CMD ["/usr/sbin/named", "-g"]
