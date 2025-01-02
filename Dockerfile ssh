@@ -1,3 +1,40 @@
+docker exec -it ssh_server bash
+apt update && apt install net-tools iputils-ping nano
+apt install dnsutils -y
+apt install -y openssh-server
+service ssh start
+nano /etc/ssh/sshd_config
+
+·  Assurez-vous que les lignes suivantes sont correctement configurées :
+·  Autoriser l'authentification par mot de passe :
+
+PasswordAuthentication yes
+
+
+Interdire la connexion en tant que root :
+
+PermitRootLogin no
+
+
+Activer l'utilisation des clés publiques/privées :
+
+PubkeyAuthentication yes
+
+
+·  Redémarrer le service SSH pour appliquer les changements :
+·  ·  service ssh restart
+
+adduser sshuser
+usermod -aG ssh sshuser
+ssh-keygen -t rsa -b 2048
+ssh-copy-id -i ~/.ssh/id_rsa.pub sshuser@172.20.0.3
+ssh sshuser@172.20.0.3
+
+
+
+
+
+
 FROM linuxserver/openssh-server
 RUN apt-get update && apt-get install -y sudo
 COPY ./config/sshd_config /etc/ssh/sshd_config
