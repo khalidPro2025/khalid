@@ -26,22 +26,6 @@ vnc         IN  A   172.20.0.14
 # fichier db.127
 TTL 604800
 
-@   IN  SOA tech-services.local. admin.tech-servic>
-
-            1         ; Serial
-            604800    ; Refresh
-            86400     ; Retry
-            2419200   ; Expire
-            604800 )  ; Negative Cache TTL
-
-; Enregistrements NS
-@                         IN  NS  ns.tech-services>
-; Enregistrements PTR
-10.0.20.172.in-addr.arpa. IN  PTR ns.tech-services>
-11.0.20.172.in-addr.arpa. IN  PTR ftp.tech-service>
-12.0.20.172.in-addr.arpa. IN  PTR ssh.tech-service>
-13.0.20.172.in-addr.arpa. IN  PTR mail.tech-servic>
-14.0.20.172.in-addr.arpa. IN  PTR vnc.tech-service>
 
 #fichier named.conf
 options {
@@ -63,3 +47,4 @@ zone "127.in-addr.arpa" {
     type master;
     file "/etc/bind/db.127";
 };
+
