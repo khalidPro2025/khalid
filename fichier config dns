@@ -1,3 +1,5 @@
+https://chat.deepseek.com/a/chat/s/fd7c7c9a-1fd4-4d17-a666-3080660fb500
+
 docker run -it --entrypoint /bin/bash tech-reseau-services_dns
 
 dossier config
