@@ -1,3 +1,5 @@
+docker run -it --entrypoint /bin/bash tech-reseau-services_dns
+
 dossier config
 # fichier db.tech-services.local
   GNU nano 6.2   db.tech-services.local            
