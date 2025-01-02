@@ -1,10 +1,45 @@
-FROM tiredofit/iredmail
-RUN apt-get update && apt-get install -y spamassassin
-COPY main.cf /etc/postfix/main.cf
-CMD ["/start.sh"]
+# Étape 1: Utiliser l'image de base Ubuntu 22.04
+FROM ubuntu:22.04
 
-main.cf
-myhostname = mail.smarttech.local
-mydomain = smarttech.local
-myorigin = /etc/mailname
-inet_interfaces = all
+# Étape 2: Définir l'environnement pour éviter les interactions utilisateur
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Étape 3: Mettre à jour les paquets et installer les dépendances nécessaires
+RUN apt-get update && apt-get install -y \
+    wget \
+    tar \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+# Étape 4: Configurer le fuseau horaire sur UTC
+RUN ln -fs /usr/share/zoneinfo/UTC /etc/localtime && \
+    dpkg-reconfigure -f noninteractive tzdata
+
+# Étape 5: Télécharger iRedMail 1.6.2
+RUN wget https://github.com/iredmail/iRedMail/archive/refs/tags/1.6.2.tar.gz
+
+# Étape 6: Extraire l'archive téléchargée
+RUN tar xzf 1.6.2.tar.gz
+
+# Étape 7: Exposer les ports nécessaires
+# Expose HTTP port
+EXPOSE 80
+# Expose HTTPS port
+EXPOSE 443
+# Expose SMTP port
+EXPOSE 25
+# Expose SMTP submission port
+EXPOSE 587
+# Expose SMTP SSL port
+EXPOSE 465
+# Expose POP3 port
+EXPOSE 110
+# Expose POP3 SSL port
+EXPOSE 995
+# Expose IMAP port
+EXPOSE 143
+# Expose IMAP SSL port
+EXPOSE 993
+
+# Étape 8: Définir la commande par défaut pour démarrer le service
+CMD ["bash"]
