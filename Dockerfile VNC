@@ -33,3 +33,52 @@ EXPOSE 5901 6901
 
 # Étape 8: Définir la commande par défaut pour démarrer le serveur VNC
 CMD ["vncserver", ":1", "-geometry", "1280x800", "-depth", "24"]
+
+
+# Dockerfile pour le service NoVNC
+FROM ubuntu:24.04
+
+# Installer les dépendances nécessaires
+RUN apt-get update && apt-get install -y \
+    x11vnc \
+    xvfb \
+    fluxbox \
+    novnc \
+    websockify \
+    wget \
+    && apt-get clean
+
+# Créer un utilisateur et les configurations nécessaires
+RUN useradd -m -s /bin/bash novnc && \
+    mkdir -p /home/novnc/.vnc && \
+    echo "novnc:vncpassword" | chpasswd
+
+# Configuration de VNC
+RUN echo "#!/bin/bash\nx11vnc -forever -usepw -create -rfbport 5900" > /home/novnc/start.sh && \
+    chmod +x /home/novnc/start.sh
+
+# Télécharger et configurer noVNC
+RUN wget https://github.com/novnc/noVNC/archive/refs/tags/v1.4.0.tar.gz && \
+    tar xzf v1.4.0.tar.gz && \
+    mv noVNC-1.4.0 /usr/share/novnc && \
+    ln -s /usr/share/novnc/vnc.html /usr/share/novnc/index.html
+
+# Variables d'environnement
+ENV DISPLAY_WIDTH=1920
+ENV DISPLAY_HEIGHT=1080
+ENV DISPLAY=:0
+# Port et répertoire de travail
+WORKDIR /home/novnc
+EXPOSE 5900
+EXPOSE 8080
+
+# Script de démarrage
+CMD xvfb-run --server-args="-screen 0 ${DISPLAY_WIDTH}x${DISPLAY_HEIGHT}x16" fluxbox & \
+    bash /home/novnc/start.sh & \
+    /usr/share/novnc/utils/novnc_proxy --vnc localhost:5900 --listen 8080
+
+
+
+
+
+
