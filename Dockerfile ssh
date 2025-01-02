@@ -27,6 +27,9 @@ PubkeyAuthentication yes
 adduser sshuser
 usermod -aG ssh sshuser
 ssh-keygen -t rsa -b 2048
+
+chmod 600 /home/sshuser1/.ssh/id_rsa
+chmod 644 /home/sshuser1/.ssh/id_rsa.pub
 ssh-copy-id -i ~/.ssh/id_rsa.pub sshuser@172.20.0.3
 ssh sshuser@172.20.0.3
 
