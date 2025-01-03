@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  ftp:
+    build: ./ftp
+    container_name: ftp_server
+    ports:
+      - "21:21"
+    volumes:
+      - ftp_data:/home/ftpuser
+    networks:
+      services:
+        ipv4_address: 172.20.0.11
+
+  ssh:
+    build: ./ssh
+    container_name: ssh_server
+    ports:
+      - "22:22"
+    volumes:
+      - ssh_data:/home/sshuser
+    networks:
+      services:
+        ipv4_address: 172.20.0.12
+
+  dns:
+    build: ./dns
+    container_name: dns_server
+    ports:
+      - "2053:2053"
+   volumes:
+      - dns_data:/etc/bind
+    networks:
+      services:
+        ipv4_address: 172.20.0.10
+
+  mail:
+    build: ./mail
+    container_name: mail_server
+    ports:
+      - "25:25"
+      - "143:143"
+      - "587:587"
+      - "993:993"
+    volumes:
+      - mail_data:/var/vmail
+    networks:
+      services:
+        ipv4_address: 172.20.0.13
+
+  novnc:
+    build: ./novnc
+    container_name: novnc_server
+    ports:
+      - "5910:5910"
+      - "8080:8080"
+    networks:
+      clients:
+        ipv4_address: 172.21.0.14
+
+
+networks:
+  services:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  clients:
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+
+volumes:
+  ftp_data:
+  ssh_data:
+  dns_data:
+  mail_data:
