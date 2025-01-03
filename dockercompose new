@@ -85,3 +85,60 @@ networks:
     ipam:
       config:
         - subnet: 172.21.0.0/24
+
+
+
+dockerfile dns et configuration
+# Utiliser une image de base Ubuntu
+FROM ubuntu:latest
+
+# Mettre à jour les paquets et installer Bind9
+RUN apt-get update && apt-get install -y bind9
+
+# Copier les fichiers de configuration
+COPY named.conf /etc/bind/named.conf
+COPY db.smarttech.local /etc/bind/db.smarttech.local
+
+# Exposer le port DNS (53)
+EXPOSE 53
+
+# Démarrer le service Bind9
+CMD ["named", "-g"]
+
+nano db.smarttech
+; Fichier de zone pour smarttech.local
+$TTL    604800
+@       IN      SOA     ns1.smarttech.local. admin.smarttech.local. (
+                        2023101001 ; Numéro de série (AAAAAMMJJVV)
+                        604800     ; Refresh
+                        86400      ; Retry
+                        2419200    ; Expire
+                        604800 )   ; TTL négatif
+
+; Enregistrements NS (Name Server)
+@       IN      NS      ns1.smarttech.local.
+
+; Enregistrements A (Adresses IP)
+ns1     IN      A       172.20.0.13 ; Adresse IP du serveur DNS
+ftp     IN      A       172.20.0.10 ; Adresse IP du serveur FTP
+ssh     IN      A       172.20.0.11 ; Adresse IP du serveur SSH
+toip    IN      A       172.20.0.12 ; Adresse IP du serveur ToIP
+mail    IN      A       172.20.0.14 ; Adresse IP du serveur de messagerie
+vnc     IN      A       172.20.0.15 ; Adresse IP du serveur VNC/NoVNC
+
+
+name.conf
+
+// Configuration principale de Bind9
+options {
+    directory "/etc/bind";
+    listen-on port 53 { any; }; // Écouter sur toutes les interfaces
+    allow-query { any; }; // Autoriser les requêtes de tous les clients
+    recursion yes; // Activer la récursion pour les requêtes DNS
+};
+
+// Zone pour le domaine smarttech.local
+zone "smarttech.local" {
+    type master; // Ce serveur est le maître pour cette zone
+    file "/etc/bind/db.smarttech"; // Fichier de zone
+};
