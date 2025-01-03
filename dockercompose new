@@ -1,0 +1,87 @@
+new configuration
+version: '3.8'
+services:
+  ftp:
+    build: ./ftp
+    ports:
+      - "21:21"
+    volumes:
+      - ./ftp/data:/home
+    networks:
+      services_network:
+        ipv4_address: 172.20.0.10
+    depends_on:
+      - dns
+
+  ssh:
+    build: ./ssh
+    ports:
+      - "22:22"
+    networks:
+      services_network:
+        ipv4_address: 172.20.0.11
+    depends_on:
+      - dns
+
+  toip:
+    build: ./toip
+    ports:
+      - "5060:5060"
+    networks:
+      services_network:
+        ipv4_address: 172.20.0.12
+    depends_on:
+      - dns
+
+  dns:
+    build: ./dns
+    ports:
+      - "53:53"
+    networks:
+      services_network:
+        ipv4_address: 172.20.0.13
+    volumes:
+      - ./dns/data:/etc/bind
+
+  mail:
+    build: ./mail
+    ports:
+      - "25:25"
+      - "143:143"
+      - "587:587"
+      - "993:993"
+    networks:
+      services_network:
+        ipv4_address: 172.20.0.14
+    depends_on:
+      - dns
+
+  vnc:
+    build: ./vnc
+    ports:
+      - "5901:5901"
+      - "6080:6080"
+    networks:
+      services_network:
+        ipv4_address: 172.20.0.15
+    depends_on:
+      - dns
+
+  client:
+    image: alpine
+    networks:
+      clients_network:
+        ipv4_address: 172.21.0.10
+    command: sleep infinity
+
+networks:
+  services_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  clients_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
