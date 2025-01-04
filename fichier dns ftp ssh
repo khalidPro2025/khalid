@@ -1,3 +1,109 @@
+#$docker-compose
+version: '3.8'
+
+services:
+  dns:
+    build:
+      context: .
+      dockerfile: ./dns/Dockerfile
+    container_name: dns_server
+    networks:
+      services:
+        ipv4_address: 172.20.0.10
+    ports:
+      - "5354:53/udp"
+      - "5354:53/tcp"
+    volumes:
+      - dns_data:/etc/bind/zones
+    restart: unless-stopped
+
+  vnc:
+    build:
+      context: .
+      dockerfile: ./vnc/Dockerfile
+    container_name: vnc_server
+    networks:
+      services:
+        ipv4_address: 172.20.0.40
+    ports:
+      - "5901:5901"
+      - "6080:6080"
+    command: ["bash", "-c", "vncserver :1 -geometry 1280x800 -depth 24 -localhost no && websockify --web /usr/share/novnc 6080 loca>
+    volumes:
+      - vnc_data:/root/.vnc
+  restart: unless-stopped
+
+  ftp:
+    build:
+      context: .
+      dockerfile: ./ftp/Dockerfile
+    container_name: ftp_server
+    networks:
+      services:
+        ipv4_address: 172.20.0.50
+    ports:
+      - "20:20"
+      - "21:21"
+    volumes:
+      - ftp_data:/var/ftp/files
+    restart: unless-stopped
+
+  ssh:
+    build:
+      context: .
+      dockerfile: ./ssh/Dockerfile
+    container_name: ssh_server
+    networks:
+      services:
+        ipv4_address: 172.20.0.60
+    ports:
+      - "2221:22"
+    command: ["/usr/sbin/sshd", "-D"]
+    volumes:
+      - ssh_data:/home/sshuser
+    restart: unless-stopped
+ mail:
+    build:
+      context: .
+      dockerfile: ./mail/Dockerfile
+    container_name: mail_server
+    hostname: mail.tech-services.local  # Définir le FQDN ici
+    networks:
+      services:
+        ipv4_address: 172.20.0.20
+    ports:
+      - "25:25"    # SMTP
+      - "143:143"  # IMAP
+      - "587:587"  # Submission
+      - "993:993"  # IMAPS
+      - "80:80"    # HTTP (pour Roundcube)
+      - "443:443"  # HTTPS (pour Roundcube)
+    volumes:
+      - mail_data:/var/vmail
+      - mail_config:/etc/postfix
+    restart: unless-stopped
+
+networks:
+  services:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24
+  clients:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
+volumes:
+  dns_data:
+  vnc_data:
+  ftp_data:
+  ssh_data:
+  mail_data:
+  mail_config:
+
+
+
 
 # Dockerfile pour DNS (Bind9)
 FROM ubuntu:22.04
