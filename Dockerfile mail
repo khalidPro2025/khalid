@@ -32,3 +32,12 @@ EXPOSE 443
  # HTTPS
 # Démarrer l'installation automatisée d'iRedMail
 CMD ["dumb-init", "bash", "/root/iRedMail/iRedMail.sh", "--auto", "/root/iRedMail/config.conf"]
+
+
+#####config.conf
+ config.conf
+DOMAIN=tech-services.local
+HOSTNAME=mail.tech-services.local
+PASSWORD=yourpassword
+STORAGE_BASE_DIR=/var/vmail
+
