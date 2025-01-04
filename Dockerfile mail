@@ -1,45 +1,34 @@
-# Étape 1: Utiliser l'image de base Ubuntu 22.04
+# Dockerfile pour Mail (iRedMail)
 FROM ubuntu:22.04
 
-# Étape 2: Définir l'environnement pour éviter les interactions utilisateur
-ENV DEBIAN_FRONTEND=noninteractive
+# Mettre à jour et installer les dépendances
+RUN apt-get update && \
+    apt-get install -y wget sudo net-tools iputils-ping nano dnsutils curl telnet mailutils dumb-init && \
+    apt-get clean
 
-# Étape 3: Mettre à jour les paquets et installer les dépendances nécessaires
-RUN apt-get update && apt-get install -y \
-    wget \
-    tar \
-    tzdata \
-    && rm -rf /var/lib/apt/lists/*
+# Télécharger la dernière version d'iRedMail
+RUN wget https://github.com/iredmail/iRedMail/archive/refs/heads/master.tar.gz -O /root/iRedMail.tar.gz && \
+    tar xzf /root/iRedMail.tar.gz -C /root && \
+    mv /root/iRedMail-master /root/iRedMail
 
-# Étape 4: Configurer le fuseau horaire sur UTC
-RUN ln -fs /usr/share/zoneinfo/UTC /etc/localtime && \
-    dpkg-reconfigure -f noninteractive tzdata
+# Configurer le FQDN dans /etc/hosts
+RUN echo "127.0.0.1   mail.tech-services.local mail localhost" >> /etc/hosts
 
-# Étape 5: Télécharger iRedMail 1.6.2
-RUN wget https://github.com/iredmail/iRedMail/archive/refs/tags/1.6.2.tar.gz
+# Copier le fichier de configuration automatisé
+COPY ./mail/config /root/iRedMail/config.conf
 
-# Étape 6: Extraire l'archive téléchargée
-RUN tar xzf 1.6.2.tar.gz
-
-# Étape 7: Exposer les ports nécessaires
-# Expose HTTP port
-EXPOSE 80
-# Expose HTTPS port
-EXPOSE 443
-# Expose SMTP port
+# Exposer les ports SMTP, IMAP, etc.
 EXPOSE 25
-# Expose SMTP submission port
-EXPOSE 587
-# Expose SMTP SSL port
-EXPOSE 465
-# Expose POP3 port
-EXPOSE 110
-# Expose POP3 SSL port
-EXPOSE 995
-# Expose IMAP port
+ # SMTP
 EXPOSE 143
-# Expose IMAP SSL port
+ # IMAP
+EXPOSE 587
+ # Submission
 EXPOSE 993
-
-# Étape 8: Définir la commande par défaut pour démarrer le service
-CMD ["bash"]
+ # IMAPS
+EXPOSE 80
+ # HTTP
+EXPOSE 443
+ # HTTPS
+# Démarrer l'installation automatisée d'iRedMail
+CMD ["dumb-init", "bash", "/root/iRedMail/iRedMail.sh", "--auto", "/root/iRedMail/config.conf"]
