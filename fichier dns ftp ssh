@@ -1,0 +1,122 @@
+
+# Dockerfile pour DNS (Bind9)
+FROM ubuntu:22.04
+
+# Mettre à jour et installer Bind9
+RUN apt-get update && \
+    apt-get install -y bind9 bind9-utils && \
+    apt-get install -y net-tools iputils-ping nano dnsutils -y && \
+    mkdir -p /etc/bind/zones
+
+# Copier les fichiers de configuration
+COPY ./dns/named.conf.local /etc/bind/named.conf.local
+COPY ./dns/db.localsm /etc/bind/db.localsm
+
+# Exposer le port DNS
+EXPOSE 53
+
+# Démarrer Bind9
+CMD ["named", "-g"]
+
+#db
+$TTL    604800
+@       IN      SOA     ns1.tech-services.local. admin.tech-services.local. (
+                          2023101001 ; Serial
+                          604800     ; Refresh
+                          86400      ; Retry
+                          2419200    ; Expire
+                          604800 )   ; Negative Cache TTL
+;
+; Enregistrements NS (Name Server)
+@       IN      NS      ns1.tech-services.local.
+@       IN      NS      ns2.tech-services.local.
+
+; Enregistrements A pour les serveurs
+@       IN      A       172.20.0.10
+ns1     IN      A       172.20.0.10
+ns2     IN      A       172.20.0.11
+mail    IN      A       172.20.0.20
+asterisk IN     A       172.20.0.30
+vnc     IN      A       172.20.0.40
+ftp     IN      A       172.20.0.50
+ssh     IN      A       172.20.0.60
+#named 
+zone "tech-services.local" {
+    type master;
+    file "/etc/bind/zones/db.localsm";
+};
+
+#ftp
+ Dockerfile pour FTP
+FROM ubuntu:22.04
+
+# Mettre à jour et installer vsftpd
+RUN apt-get update && \
+    apt-get install -y vsftpd && \
+    apt-get install -y net-tools iputils-ping nano dnsutils -y && \
+    mkdir -p /var/ftp/files
+
+# Configurer vsftpd
+COPY ./ftp/vsftpd.conf /etc/vsftpd.conf
+
+# Créer un utilisateur FTP
+RUN useradd -m ftpuser && \
+    echo "ftpuser:password" | chpasswd && \
+    chown ftpuser:ftpuser /var/ftp/files
+
+# Exposer le port FTP
+EXPOSE 20 21
+
+# Démarrer vsftpd
+CMD ["vsftpd", "/etc/vsftpd.conf"]
+#vsf
+# vsftpd.conf
+listen=YES
+anonymous_enable=NO
+local_enable=YES
+write_enable=YES
+local_umask=022
+dirmessage_enable=YES
+use_localtime=YES
+xferlog_enable=YES
+connect_from_port_20=YES
+chroot_local_user=YES
+secure_chroot_dir=/var/run/vsftpd/empty
+pam_service_name=vsftpd
+rsa_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
+rsa_private_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+ssl_enable=NO
+#ssh
+ Utiliser une image Ubuntu 22.04 comme base
+FROM ubuntu:22.04
+
+# Mettre à jour les paquets et installer OpenSSH
+RUN apt-get update && \
+    apt-get install -y openssh-server && \
+   apt-get install -y net-tools iputils-ping nano dnsutils -y && \
+    mkdir -p /var/run/sshd
+
+# Créer un utilisateur pour SSH
+RUN useradd -m sshuser && \
+    echo "sshuser:password" | chpasswd && \
+    mkdir -p /home/sshuser/.ssh && \
+    chmod 700 /home/sshuser/.ssh
+
+# Générer une clé SSH pour l'utilisateur sshuser
+RUN ssh-keygen -t rsa -b 4096 -f /home/sshuser/.ssh/id_rsa -N "" && \
+    cp /home/sshuser/.ssh/id_rsa.pub /home/sshuser/.ssh/authorized_keys && \
+    chown -R sshuser:sshuser /home/sshuser/.ssh && \
+    chmod 600 /home/sshuser/.ssh/authorized_keys
+
+# Configurer SSH pour autoriser l'accès par mot de passe (optionnel)
+RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
+
+# Exposer le port SSH
+EXPOSE 22
+
+# Démarrer le service SSH en mode par défaut
+CMD ["service", "ssh", "start"]
+
+#ird_rsa
+ssh-keygen -t rsa -b 4096 -f id_rsa -N &quot
