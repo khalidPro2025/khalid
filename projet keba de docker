@@ -1,0 +1,440 @@
+##Dockerfile Vnc
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+        tigervnc-standalone-server \
+        novnc \
+        websockify \
+        net-tools \
+        iputils-ping \
+        nano \
+        dnsutils \
+        xfce4 \
+        xfce4-goodies \
+        xfce4-terminal \
+        x11-apps && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir -p /root/.vnc && \
+    echo "password" | vncpasswd -f > /root/.vnc/passwd && \
+    chmod 600 /root/.vnc/passwd
+
+RUN echo -e '#!/bin/bash\nunset SESSION_MANAGER\nunset DBUS_SESSION_BUS_ADDRESS\nexec startxfce4' > /root/.vnc/xstartup && \
+    chmod +x /root/.vnc/xstartup
+
+EXPOSE 5901 6080
+
+CMD ["bash", "-c", "vncserver :1 -geometry 1280x800 -depth 24 -localhost no && websockify --web /usr/share/novnc 6080 localhost:590>
+
+## fichier de config
+<pre>oot@prosmart:~/smarttech/vnc# ls
+Dockerfile  <font color="#26A269"><b>xstartup</b></font>
+root@prosmart:~/smarttech/vnc# cat xstartup 
+#!/bin/bash
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+exec startxfce4
+root@prosmart:~/smarttech/vnc# 
+
+####Dockerfile Dns
+<pre>root@prosmart:~/smarttech/dns# ls
+db.localsm  Dockerfile  named.conf.local
+root@prosmart:~/smarttech/dns# cat Dockerfile 
+# Dockerfile pour DNS (Bind9)
+FROM ubuntu:22.04
+
+# Mettre à jour et installer Bind9
+RUN apt-get update &amp;&amp; \
+    apt-get install -y bind9 bind9-utils &amp;&amp; \
+    apt-get install -y net-tools iputils-ping nano dnsutils -y &amp;&amp; \
+    mkdir -p /etc/bind/zones
+
+# Copier les fichiers de configuration
+COPY ./dns/named.conf.local /etc/bind/named.conf.local
+COPY ./dns/db.localsm /etc/bind/db.localsm
+
+# Exposer le port DNS
+EXPOSE 53
+
+# Démarrer Bind9
+CMD [&quot;named&quot;, &quot;-g&quot;]
+root@prosmart:~/smarttech/dns# 
+root@prosmart:~/smarttech/dns# cat db.localsm 
+$TTL    604800
+@       IN      SOA     ns1.tech-services.local. admin.tech-services.local. (
+                          2023101001 ; Serial
+                          604800     ; Refresh
+                          86400      ; Retry
+                          2419200    ; Expire
+                          604800 )   ; Negative Cache TTL
+;
+; Enregistrements NS (Name Server)
+@       IN      NS      ns1.tech-services.local.
+@       IN      NS      ns2.tech-services.local.
+
+; Enregistrements A pour les serveurs
+@       IN      A       172.20.0.10
+ns1     IN      A       172.20.0.10
+ns2     IN      A       172.20.0.11
+mail    IN      A       172.20.0.20
+asterisk IN     A       172.20.0.30
+vnc     IN      A       172.20.0.40
+ftp     IN      A       172.20.0.50
+ssh     IN      A       172.20.0.60
+
+; Enregistrements MX pour le serveur de messagerie
+@       IN      MX      10 mail.tech-services.local.
+
+; Enregistrements CNAME pour les alias
+www     IN      CNAME   ns1.tech-services.local.
+sip     IN      CNAME   asterisk.tech-services.local.
+webmail IN      CNAME   mail.tech-services.local.
+root@prosmart:~/smarttech/dns# 
+<pre>root@prosmart:~/smarttech/dns# cat named.conf.local 
+zone &quot;tech-services.local&quot; {
+    type master;
+    file &quot;/etc/bind/zones/db.localsm&quot;;
+};
+root@prosmart:~/smarttech/dns# 
+
+### dockerfile ssh
+Dockerfile  id_rsa.pub
+root@prosmart:~/smarttech/ssh# cat Dockerfile 
+# Utiliser une image Ubuntu 22.04 comme base
+FROM ubuntu:22.04
+
+# Mettre à jour les paquets et installer OpenSSH
+RUN apt-get update && \
+    apt-get install -y openssh-server && \
+   apt-get install -y net-tools iputils-ping nano dnsutils -y && \
+    mkdir -p /var/run/sshd
+
+# Créer un utilisateur pour SSH
+RUN useradd -m sshuser && \
+    echo "sshuser:password" | chpasswd && \
+    mkdir -p /home/sshuser/.ssh && \
+    chmod 700 /home/sshuser/.ssh
+
+# Générer une clé SSH pour l'utilisateur sshuser
+RUN ssh-keygen -t rsa -b 4096 -f /home/sshuser/.ssh/id_rsa -N "" && \
+    cp /home/sshuser/.ssh/id_rsa.pub /home/sshuser/.ssh/authorized_keys && \
+    chown -R sshuser:sshuser /home/sshuser/.ssh && \
+    chmod 600 /home/sshuser/.ssh/authorized_keys
+
+# Configurer SSH pour autoriser l'accès par mot de passe (optionnel)
+RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin no/' /etc/ssh/sshd_config
+
+# Exposer le port SSH
+EXPOSE 22
+
+# Démarrer le service SSH en mode par défaut
+CMD ["service", "ssh", "start"]
+root@prosmart:~/smarttech/ssh# 
+###id_rsa.pub
+<pre>root@prosmart:~/smarttech/ssh# cat id_rsa.pub 
+ssh-keygen -t rsa -b 4096 -f id_rsa -N &quot;&quot;
+root@prosmart:~/smarttech/ssh# 
+
+
+### Dockerfile ftp
+root@prosmart:~/smarttech/ftp# cat Dockerfile 
+# Dockerfile pour FTP
+FROM ubuntu:22.04
+
+# Mettre à jour et installer vsftpd
+RUN apt-get update && \
+    apt-get install -y vsftpd && \
+    apt-get install -y net-tools iputils-ping nano dnsutils -y && \
+    mkdir -p /var/ftp/files
+
+# Configurer vsftpd
+COPY ./ftp/vsftpd.conf /etc/vsftpd.conf
+
+# Créer un utilisateur FTP
+RUN useradd -m ftpuser && \
+    echo "ftpuser:password" | chpasswd && \
+    chown ftpuser:ftpuser /var/ftp/files
+
+# Exposer le port FTP
+EXPOSE 20 21
+
+# Démarrer vsftpd
+CMD ["vsftpd", "/etc/vsftpd.conf"]
+root@prosmart:~/smarttech/ftp# 
+root@prosmart:~/smarttech/ftp# cat vsftpd.conf 
+# vsftpd.conf
+listen=YES
+anonymous_enable=NO
+local_enable=YES
+write_enable=YES
+local_umask=022
+dirmessage_enable=YES
+use_localtime=YES
+xferlog_enable=YES
+connect_from_port_20=YES
+chroot_local_user=YES
+secure_chroot_dir=/var/run/vsftpd/empty
+pam_service_name=vsftpd
+rsa_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
+rsa_private_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+ssl_enable=NO
+root@prosmart:~/smarttech/ftp# 
+
+
+## Dockerfile Mail
+<pre>root@prosmart:~/smarttech/mail# cat Dockerfile 
+# Dockerfile pour Mail (iRedMail)
+FROM ubuntu:22.04
+
+# Mettre à jour et installer les dépendances
+RUN apt-get update &amp;&amp; \
+    apt-get install -y wget sudo net-tools iputils-ping nano dnsutils curl telnet mailutils dumb-init &amp;&amp; \
+    apt-get clean
+
+# Télécharger la dernière version d&apos;iRedMail
+RUN wget https://github.com/iredmail/iRedMail/archive/refs/heads/master.tar.gz -O /root/iRedMail.tar.gz &amp;&amp; \
+    tar xzf /root/iRedMail.tar.gz -C /root &amp;&amp; \
+    mv /root/iRedMail-master /root/iRedMail
+
+# Configurer le FQDN dans /etc/hosts
+RUN echo &quot;127.0.0.1   mail.tech-services.local mail localhost&quot; &gt;&gt; /etc/hosts
+
+# Copier le fichier de configuration automatisé
+COPY ./mail/config /root/iRedMail/config.conf
+
+# Exposer les ports SMTP, IMAP, etc.
+EXPOSE 25  
+ # SMTP
+EXPOSE 143 
+ # IMAP
+EXPOSE 587 
+ # Submission
+EXPOSE 993 
+ # IMAPS
+EXPOSE 80  
+ # HTTP
+EXPOSE 443 
+ # HTTPS
+
+# Démarrer l&apos;installation automatisée d&apos;iRedMail
+CMD [&quot;dumb-init&quot;, &quot;bash&quot;, &quot;/root/iRedMail/iRedMail.sh&quot;, &quot;--auto&quot;, &quot;/root/iRedMail/config.conf&quot;]
+
+<pre>root@prosmart:~/smarttech/mail/config# cat config.conf 
+# config.conf
+DOMAIN=tech-services.local
+HOSTNAME=mail.tech-services.local
+PASSWORD=yourpassword
+STORAGE_BASE_DIR=/var/vmail
+root@prosmart:~/smarttech/mail/config# 
+
+
+### Dockerfile Toip
+<pre><font color="#12488B"><b>config</b></font>  Dockerfile  pjsip.conf
+root@prosmart:~/smarttech/toip# cat Dockerfile 
+# Utiliser une image de base officielle d&apos;Ubuntu
+FROM ubuntu:22.04
+
+# Variables d&apos;environnement
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Mettre à jour le système et installer les dépendances
+RUN apt-get update &amp;&amp; \
+    apt-get install -y \
+    asterisk \         
+ # Serveur Asterisk
+      
+ # Module PJSIP pour Asterisk
+    nano \             
+ # Éditeur de texte pour les modifications manuelles
+    wget \             
+ # Télécharger des fichiers depuis le web
+    curl \             
+ # Outil pour les requêtes HTTP
+    &amp;&amp; apt-get clean &amp;&amp; \ 
+ # Nettoyer le cache des paquets pour réduire la taille de l&apos;image
+    rm -rf /var/lib/apt/lists/* 
+ # Supprimer les fichiers temporaires
+
+# Créer un répertoire pour les configurations personnalisées
+RUN mkdir -p /etc/asterisk/custom
+
+# Copier le fichier pjsip.conf personnalisé dans le conteneur
+COPY ./toip/pjsip.conf /etc/asterisk/custom/pjsip.conf
+
+# Lier le fichier pjsip.conf personnalisé au répertoire de configuration d&apos;Asterisk
+RUN ln -sf /etc/asterisk/custom/pjsip.conf /etc/asterisk/pjsip.conf
+
+# Exposer les ports nécessaires pour SIP et RTP
+EXPOSE 5060/udp 
+ # Port SIP
+EXPOSE 10000-20000/udp 
+ # Ports RTP pour les flux multimédias
+
+# Démarrer Asterisk en arrière-plan
+CMD [&quot;asterisk&quot;, &quot;-f&quot;]
+root@prosmart:~/smarttech/toip# 
+
+root@prosmart:~/smarttech/toip# cat pjsip.conf 
+; pjsip.conf
+; Configuration SIP pour Asterisk
+
+[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0:5060
+
+[1001]
+type=endpoint
+transport=transport-udp
+context=default
+disallow=all
+allow=ulaw
+auth=1001
+aors=1001
+
+[1001]
+type=auth
+auth_type=userpass
+password=secret
+username=1001
+
+[1001]
+type=aor
+contact=sip:1001@172.20.0.10:5060
+root@prosmart:~/smarttech/toip# 
+<pre>oot@prosmart:~/smarttech# cat docker-compose.yml 
+version: &apos;3.8&apos;
+
+services:
+  dns:
+    build:
+      context: .
+      dockerfile: ./dns/Dockerfile  # Chemin vers le Dockerfile du service DNS
+    container_name: dns_server
+    networks:
+      services:
+        ipv4_address: 172.20.0.10  # Adresse IP statique pour le conteneur DNS
+    ports:
+      - &quot;5354:53/udp&quot;  # Exposer le port DNS en UDP
+      - &quot;5354:53/tcp&quot;  # Exposer le port DNS en TCP
+    volumes:
+      - dns_data:/etc/bind/zones  # Volume pour stocker les zones DNS
+    restart: unless-stopped  # Redémarrer automatiquement sauf en cas d&apos;arrêt manuel
+
+  vnc:
+    build:
+      context: .
+      dockerfile: ./vnc/Dockerfile  # Chemin vers le Dockerfile du service VNC
+    container_name: vnc_server
+    networks:
+      services:
+        ipv4_address: 172.20.0.40  # Adresse IP statique pour le conteneur VNC
+    ports:
+      - &quot;5901:5901&quot;  # Port VNC pour l&apos;accès graphique
+      - &quot;6080:6080&quot;  # Port NoVNC pour l&apos;accès via navigateur
+    command: &gt;
+      bash -c &quot;vncserver :1 -geometry 1280x800 -depth 24 -localhost no &amp;&amp;
+               websockify --web /usr/share/novnc 6080 localhost:5901&quot;
+    volumes:
+      - vnc_data:/root/.vnc  # Volume pour stocker les configurations VNC
+    restart: unless-stopped
+
+  ftp:
+    build:
+      context: .
+      dockerfile: ./ftp/Dockerfile  # Chemin vers le Dockerfile du service FTP
+    container_name: ftp_server
+    networks:
+      services:
+        ipv4_address: 172.20.0.50  # Adresse IP statique pour le conteneur FTP
+    ports:
+      - &quot;20:20&quot;  # Port FTP pour le transfert de données
+      - &quot;21:21&quot;  # Port FTP pour les commandes
+    volumes:
+      - ftp_data:/var/ftp/files  # Volume pour stocker les fichiers partagés via FTP
+    restart: unless-stopped
+
+  ssh:
+    build:
+      context: .
+      dockerfile: ./ssh/Dockerfile  # Chemin vers le Dockerfile du service SSH
+    container_name: ssh_server
+    networks:
+      services:
+        ipv4_address: 172.20.0.60  # Adresse IP statique pour le conteneur SSH
+    ports:
+      - &quot;2221:22&quot;  # Exposer le port SSH sur un port personnalisé
+    command: [&quot;/usr/sbin/sshd&quot;, &quot;-D&quot;]  # Démarrer le serveur SSH en mode détaché
+    volumes:
+      - ssh_data:/home/sshuser  # Volume pour stocker les données utilisateur SSH
+    restart: unless-stopped
+
+  mail:
+    build:
+      context: .
+      dockerfile: ./mail/Dockerfile  # Chemin vers le Dockerfile du service Mail
+    container_name: mail_server
+    hostname: mail.tech-services.local  # Définir le FQDN ici
+    networks:
+      services:
+        ipv4_address: 172.20.0.20  # Adresse IP statique pour le conteneur Mail
+    ports:
+      - &quot;25:25&quot;    # SMTP
+      - &quot;143:143&quot;  # IMAP
+      - &quot;587:587&quot;  # Submission
+      - &quot;993:993&quot;  # IMAPS
+      - &quot;80:80&quot;    # HTTP (pour Roundcube)
+      - &quot;443:443&quot;  # HTTPS (pour Roundcube)
+    volumes:
+      - mail_data:/var/vmail  # Volume pour stocker les e-mails
+      - mail_config:/etc/postfix  # Volume pour stocker la configuration Postfix
+    restart: unless-stopped
+
+  toip:
+    build:
+      context: .
+      dockerfile: ./toip/Dockerfile  # Chemin vers le Dockerfile du service ToIP
+    container_name: toip_server
+    networks:
+      services:
+        ipv4_address: 172.20.0.30  # Adresse IP statique pour le conteneur ToIP
+    ports:
+      - &quot;5060:5060/udp&quot;  # Port SIP
+      - &quot;10000-20000:10000-20000/udp&quot;  # Ports RTP pour les flux multimédias
+    volumes:
+      - toip_config:/etc/asterisk  # Volume pour stocker la configuration Asterisk
+    restart: unless-stopped
+
+# Configuration des réseaux
+networks:
+  services:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24  # Sous-réseau pour les services
+  clients:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24  # Sous-réseau pour les clients
+
+# Configuration des volumes
+volumes:
+  dns_data:  # Volume pour le service DNS
+  vnc_data:  # Volume pour le service VNC
+  ftp_data:  # Volume pour le service FTP
+  ssh_data:  # Volume pour le service SSH
+  mail_data:  # Volume pour le service Mail
+  mail_config:  # Volume pour la configuration Mail
+  toip_config:  # Volume pour la configuration ToIP
+
+
+
+
+
+
