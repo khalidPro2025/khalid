@@ -1,0 +1,13 @@
+dn: cn=kdc-service,dc=lita,dc=sn
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: kdc-service
+userPassword: {SSHA}5f4dcc3b5aa765d61d8327deb882cf99
+description: Kerberos KDC Service Account
+
+dn: cn=admin-service,dc=lita,dc=sn
+objectClass: simpleSecurityObject
+objectClass: organizationalRole
+cn: admin-service
+userPassword: {SSHA}5f4dcc3b5aa765d61d8327deb882cf99
+description: Kerberos Admin Service Account
